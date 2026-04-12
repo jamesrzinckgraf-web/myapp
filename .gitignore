@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
+
+# local SQLite db
+dev.db
+dev.db-journal
+
+# uploaded images (will use Supabase Storage in prod)
+/public/uploads/*
+!/public/uploads/.gitkeep
