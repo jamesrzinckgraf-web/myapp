@@ -3,8 +3,12 @@ import { getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { sessionOptions, SessionData } from '@/lib/session'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+)
 
 export async function GET() {
   try {
@@ -14,9 +18,7 @@ export async function GET() {
 
     const products = await prisma.product.findMany({
       orderBy: { createdAt: 'desc' },
-      include: {
-        swipes: true,
-      },
+      include: { swipes: true },
     })
 
     const productsWithStats = products.map((product) => {
@@ -61,32 +63,30 @@ export async function POST(request: NextRequest) {
     const image = formData.get('image') as File | null
 
     if (!name || !image) {
-      return NextResponse.json(
-        { error: 'Name and image are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Name and image are required' }, { status: 400 })
     }
 
-    // Save image to public/uploads/
     const bytes = await image.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    const uploadsDir = join(process.cwd(), 'public', 'uploads')
-    await mkdir(uploadsDir, { recursive: true })
-
     const ext = image.name.split('.').pop() || 'jpg'
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const filepath = join(uploadsDir, filename)
-    await writeFile(filepath, buffer)
 
-    const imageUrl = `/uploads/${filename}`
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(filename, buffer, { contentType: image.type })
+
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError)
+      return NextResponse.json({ error: 'Image upload failed' }, { status: 500 })
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('products')
+      .getPublicUrl(filename)
 
     const product = await prisma.product.create({
-      data: {
-        name,
-        description: description || null,
-        imageUrl,
-      },
+      data: { name, description: description || null, imageUrl: publicUrl },
     })
 
     return NextResponse.json({ product })
