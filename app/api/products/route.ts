@@ -5,10 +5,12 @@ import { prisma } from '@/lib/prisma'
 import { sessionOptions, SessionData } from '@/lib/session'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_ANON_KEY!
+  )
+}
 
 export async function GET() {
   try {
@@ -72,6 +74,7 @@ export async function POST(request: NextRequest) {
     const ext = image.name.split('.').pop() || 'jpg'
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
+    const supabase = getSupabase()
     const { error: uploadError } = await supabase.storage
       .from('products')
       .upload(filename, buffer, { contentType: image.type })
