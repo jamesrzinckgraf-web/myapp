@@ -8,6 +8,8 @@ interface ProductStat {
   name: string
   description: string | null
   imageUrl: string
+  size: string | null
+  requestedPrice: number | null
   createdAt: string
   stats: {
     right: number
@@ -27,6 +29,8 @@ export default function AdminPage() {
   // Upload form state
   const [uploadName, setUploadName] = useState('')
   const [uploadDesc, setUploadDesc] = useState('')
+  const [uploadSize, setUploadSize] = useState('')
+  const [uploadPrice, setUploadPrice] = useState('')
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
@@ -108,6 +112,8 @@ export default function AdminPage() {
       const formData = new FormData()
       formData.append('name', uploadName.trim())
       if (uploadDesc.trim()) formData.append('description', uploadDesc.trim())
+      if (uploadSize.trim()) formData.append('size', uploadSize.trim())
+      if (uploadPrice.trim()) formData.append('requestedPrice', uploadPrice.trim())
       formData.append('image', uploadFile)
 
       const res = await fetch('/api/products', {
@@ -124,6 +130,8 @@ export default function AdminPage() {
       setUploadSuccess('Product uploaded successfully!')
       setUploadName('')
       setUploadDesc('')
+      setUploadSize('')
+      setUploadPrice('')
       setUploadFile(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
       await fetchProducts()
@@ -238,6 +246,32 @@ export default function AdminPage() {
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Size / Dimensions (optional)
+                </label>
+                <input
+                  type="text"
+                  value={uploadSize}
+                  onChange={(e) => setUploadSize(e.target.value)}
+                  placeholder='e.g. 12" x 8" x 4"'
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Requested Price (optional)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={uploadPrice}
+                  onChange={(e) => setUploadPrice(e.target.value)}
+                  placeholder="e.g. 49.99"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -339,6 +373,12 @@ export default function AdminPage() {
                     {product.description && (
                       <p className="text-sm text-gray-400 truncate">{product.description}</p>
                     )}
+                    <div className="flex gap-3 mt-0.5 text-xs text-gray-500">
+                      {product.size && <span>📏 {product.size}</span>}
+                      {product.requestedPrice != null && (
+                        <span>💲{product.requestedPrice.toFixed(2)}</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Stats */}

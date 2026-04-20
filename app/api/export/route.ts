@@ -37,8 +37,11 @@ export async function GET() {
       'User Email',
       'Product Name',
       'Product Description',
+      'Size',
+      'Requested Price',
       'Direction',
       'Interested',
+      'Bid Price',
       'Swipe Date',
     ].join(',')
 
@@ -48,8 +51,11 @@ export async function GET() {
         csvCell(s.user.email),
         csvCell(s.product.name),
         csvCell(s.product.description),
+        csvCell(s.product.size),
+        csvCell(s.product.requestedPrice?.toString()),
         csvCell(s.direction),
         csvCell(s.direction === 'right' ? 'yes' : 'no'),
+        csvCell(s.bidPrice?.toString()),
         csvCell(s.createdAt.toISOString()),
       ].join(',')
     )

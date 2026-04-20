@@ -13,10 +13,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const { productId, direction } = await request.json()
+    const { productId, direction, bidPrice } = await request.json()
 
     if (!productId || !direction || !['left', 'right'].includes(direction)) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    }
+
+    // Only accept bidPrice on right swipes. Ignore it otherwise.
+    let normalizedBid: number | null = null
+    if (direction === 'right' && bidPrice != null && bidPrice !== '') {
+      const parsed = typeof bidPrice === 'number' ? bidPrice : parseFloat(bidPrice)
+      if (Number.isNaN(parsed) || parsed < 0) {
+        return NextResponse.json(
+          { error: 'Bid price must be a non-negative number' },
+          { status: 400 }
+        )
+      }
+      normalizedBid = parsed
     }
 
     const swipe = await prisma.swipe.upsert({
@@ -26,11 +39,12 @@ export async function POST(request: NextRequest) {
           productId,
         },
       },
-      update: { direction },
+      update: { direction, bidPrice: normalizedBid },
       create: {
         userId: session.userId,
         productId,
         direction,
+        bidPrice: normalizedBid,
       },
     })
 

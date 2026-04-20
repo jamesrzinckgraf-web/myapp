@@ -8,6 +8,8 @@ interface Product {
   name: string
   description: string | null
   imageUrl: string
+  size: string | null
+  requestedPrice: number | null
 }
 
 interface SwipeCardProps {
@@ -148,9 +150,19 @@ export default function SwipeCard({ product, onSwipe }: SwipeCardProps) {
 
         {/* Info */}
         <div className="p-4">
-          <h2 className="text-xl font-bold text-gray-900 truncate">{product.name}</h2>
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="text-xl font-bold text-gray-900 truncate flex-1">{product.name}</h2>
+            {product.requestedPrice != null && (
+              <span className="text-lg font-semibold text-indigo-600 shrink-0">
+                ${product.requestedPrice.toFixed(2)}
+              </span>
+            )}
+          </div>
           {product.description && (
             <p className="mt-1 text-sm text-gray-500 line-clamp-2">{product.description}</p>
+          )}
+          {product.size && (
+            <p className="mt-1 text-xs text-gray-400">Size: {product.size}</p>
           )}
         </div>
       </div>

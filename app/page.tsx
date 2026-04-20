@@ -3,12 +3,15 @@
 import { useEffect, useState, useCallback } from 'react'
 import SwipeCard from '@/components/SwipeCard'
 import UserModal from '@/components/UserModal'
+import BidModal from '@/components/BidModal'
 
 interface Product {
   id: string
   name: string
   description: string | null
   imageUrl: string
+  size: string | null
+  requestedPrice: number | null
   swiped: boolean
   swipeDirection: string | null
 }
@@ -19,6 +22,7 @@ export default function HomePage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [swipeLoading, setSwipeLoading] = useState(false)
+  const [pendingBid, setPendingBid] = useState<Product | null>(null)
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -63,16 +67,17 @@ export default function HomePage() {
     setLoading(false)
   }
 
-  const handleSwipe = async (direction: 'left' | 'right') => {
-    const product = products[currentIndex]
-    if (!product || swipeLoading) return
-
+  const recordSwipe = async (
+    productId: string,
+    direction: 'left' | 'right',
+    bidPrice: number | null
+  ) => {
     setSwipeLoading(true)
     try {
       await fetch('/api/swipe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, direction }),
+        body: JSON.stringify({ productId, direction, bidPrice }),
       })
     } catch (error) {
       console.error('Failed to record swipe:', error)
@@ -80,6 +85,25 @@ export default function HomePage() {
       setSwipeLoading(false)
       setCurrentIndex((prev) => prev + 1)
     }
+  }
+
+  const handleSwipe = async (direction: 'left' | 'right') => {
+    const product = products[currentIndex]
+    if (!product || swipeLoading) return
+
+    if (direction === 'right') {
+      // Hold off committing the swipe — ask for a bid first.
+      setPendingBid(product)
+      return
+    }
+
+    await recordSwipe(product.id, 'left', null)
+  }
+
+  const handleBidSubmit = async (bidPrice: number | null) => {
+    if (!pendingBid) return
+    await recordSwipe(pendingBid.id, 'right', bidPrice)
+    setPendingBid(null)
   }
 
   if (loading) {
@@ -182,6 +206,15 @@ export default function HomePage() {
             )}
           </div>
         </>
+      )}
+
+      {/* Bid modal — shown after a right-swipe */}
+      {pendingBid && (
+        <BidModal
+          productName={pendingBid.name}
+          requestedPrice={pendingBid.requestedPrice}
+          onSubmit={handleBidSubmit}
+        />
       )}
 
       {/* Admin link */}

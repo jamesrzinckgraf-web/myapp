@@ -8,12 +8,14 @@ datasource db {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  imageUrl    String
-  createdAt   DateTime @default(now())
-  swipes      Swipe[]
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  imageUrl       String
+  size           String?
+  requestedPrice Float?
+  createdAt      DateTime @default(now())
+  swipes         Swipe[]
 }
 
 model User {
@@ -27,6 +29,7 @@ model User {
 model Swipe {
   id        String   @id @default(cuid())
   direction String
+  bidPrice  Float?
   createdAt DateTime @default(now())
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String

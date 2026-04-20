@@ -35,6 +35,8 @@ export async function GET() {
         name: product.name,
         description: product.description,
         imageUrl: product.imageUrl,
+        size: product.size,
+        requestedPrice: product.requestedPrice,
         createdAt: product.createdAt,
         swiped: !!userSwipe,
         swipeDirection: userSwipe?.direction || null,
@@ -64,10 +66,24 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const name = formData.get('name') as string
     const description = formData.get('description') as string | null
+    const size = formData.get('size') as string | null
+    const requestedPriceRaw = formData.get('requestedPrice') as string | null
     const image = formData.get('image') as File | null
 
     if (!name || !image) {
       return NextResponse.json({ error: 'Name and image are required' }, { status: 400 })
+    }
+
+    let requestedPrice: number | null = null
+    if (requestedPriceRaw && requestedPriceRaw.trim() !== '') {
+      const parsed = parseFloat(requestedPriceRaw)
+      if (Number.isNaN(parsed) || parsed < 0) {
+        return NextResponse.json(
+          { error: 'Requested price must be a non-negative number' },
+          { status: 400 }
+        )
+      }
+      requestedPrice = parsed
     }
 
     const bytes = await image.arrayBuffer()
@@ -91,7 +107,13 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(filename)
 
     const product = await prisma.product.create({
-      data: { name, description: description || null, imageUrl: publicUrl },
+      data: {
+        name,
+        description: description || null,
+        size: size && size.trim() !== '' ? size : null,
+        requestedPrice,
+        imageUrl: publicUrl,
+      },
     })
 
     return NextResponse.json({ product })
