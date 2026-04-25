@@ -192,11 +192,17 @@ export default function HomePage() {
                   Check back later for new discoveries.
                 </p>
                 <button
-                  onClick={() => {
-                    localStorage.removeItem('userId')
-                    setUserId(null)
-                    setProducts([])
-                    setCurrentIndex(0)
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/products')
+                      const data = await res.json()
+                      if (data.products) {
+                        setProducts(data.products)
+                        setCurrentIndex(0)
+                      }
+                    } catch (error) {
+                      console.error('Failed to restart:', error)
+                    }
                   }}
                   className="mt-8 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors"
                 >
