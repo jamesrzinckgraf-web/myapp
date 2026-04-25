@@ -3,6 +3,11 @@
 import { useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
 
+interface ProductImage {
+  id: string
+  url: string
+}
+
 interface Product {
   id: string
   name: string
@@ -10,21 +15,29 @@ interface Product {
   imageUrl: string
   size: string | null
   requestedPrice: number | null
+  images?: ProductImage[]
 }
 
 interface SwipeCardProps {
   product: Product
   onSwipe: (direction: 'left' | 'right') => void
+  onImageClick?: () => void
 }
 
 const SWIPE_THRESHOLD = 100
+// Movement under this many pixels is considered a tap, not a drag.
+const TAP_MAX_MOVEMENT = 6
 
-export default function SwipeCard({ product, onSwipe }: SwipeCardProps) {
+export default function SwipeCard({ product, onSwipe, onImageClick }: SwipeCardProps) {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [isAnimatingOut, setIsAnimatingOut] = useState<'left' | 'right' | null>(null)
   const startPos = useRef({ x: 0, y: 0 })
+  const movedRef = useRef(false)
   const cardRef = useRef<HTMLDivElement>(null)
+
+  const imageCount = product.images?.length ?? 0
+  const hasMultiple = imageCount > 1
 
   const triggerSwipe = useCallback(
     (direction: 'left' | 'right') => {
@@ -42,14 +55,17 @@ export default function SwipeCard({ product, onSwipe }: SwipeCardProps) {
     if (isAnimatingOut) return
     setIsDragging(true)
     startPos.current = { x: clientX, y: clientY }
+    movedRef.current = false
   }
 
   const handleMove = (clientX: number, clientY: number) => {
     if (!isDragging || isAnimatingOut) return
-    setOffset({
-      x: clientX - startPos.current.x,
-      y: clientY - startPos.current.y,
-    })
+    const dx = clientX - startPos.current.x
+    const dy = clientY - startPos.current.y
+    if (Math.abs(dx) > TAP_MAX_MOVEMENT || Math.abs(dy) > TAP_MAX_MOVEMENT) {
+      movedRef.current = true
+    }
+    setOffset({ x: dx, y: dy })
   }
 
   const handleEnd = () => {
@@ -60,7 +76,10 @@ export default function SwipeCard({ product, onSwipe }: SwipeCardProps) {
     } else if (offset.x < -SWIPE_THRESHOLD) {
       triggerSwipe('left')
     } else {
+      // Snap back. If the user barely moved, treat it as a tap on the card.
+      const wasTap = !movedRef.current
       setOffset({ x: 0, y: 0 })
+      if (wasTap && onImageClick) onImageClick()
     }
   }
 
@@ -68,7 +87,9 @@ export default function SwipeCard({ product, onSwipe }: SwipeCardProps) {
   const onMouseDown = (e: React.MouseEvent) => handleStart(e.clientX, e.clientY)
   const onMouseMove = (e: React.MouseEvent) => handleMove(e.clientX, e.clientY)
   const onMouseUp = () => handleEnd()
-  const onMouseLeave = () => { if (isDragging) handleEnd() }
+  const onMouseLeave = () => {
+    if (isDragging) handleEnd()
+  }
 
   // Touch events
   const onTouchStart = (e: React.TouchEvent) => {
@@ -146,6 +167,23 @@ export default function SwipeCard({ product, onSwipe }: SwipeCardProps) {
             className="object-cover"
             draggable={false}
           />
+          {hasMultiple && (
+            <div className="absolute top-3 right-3 flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full pointer-events-none">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-3.5 h-3.5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              {imageCount} photos
+            </div>
+          )}
         </div>
 
         {/* Info */}

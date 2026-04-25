@@ -4,12 +4,21 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import SwipeCard from '@/components/SwipeCard'
 import BidModal from '@/components/BidModal'
+import ImageLightbox from '@/components/ImageLightbox'
+
+interface ProductImage {
+  id: string
+  url: string
+  isPrimary: boolean
+  sortOrder: number
+}
 
 interface Product {
   id: string
   name: string
   description: string | null
   imageUrl: string
+  images: ProductImage[]
   size: string | null
   requestedPrice: number | null
   swiped: boolean
@@ -24,6 +33,7 @@ export default function SwipePage() {
   const [loading, setLoading] = useState(true)
   const [swipeLoading, setSwipeLoading] = useState(false)
   const [pendingBid, setPendingBid] = useState<Product | null>(null)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   const fetchProducts = useCallback(async (includeAll = false) => {
     try {
@@ -160,6 +170,7 @@ export default function SwipePage() {
                   key={currentProduct.id}
                   product={currentProduct}
                   onSwipe={handleSwipe}
+                  onImageClick={() => setLightboxOpen(true)}
                 />
               </div>
 
@@ -219,6 +230,13 @@ export default function SwipePage() {
           productName={pendingBid.name}
           requestedPrice={pendingBid.requestedPrice}
           onSubmit={handleBidSubmit}
+        />
+      )}
+
+      {lightboxOpen && currentProduct && currentProduct.images.length > 0 && (
+        <ImageLightbox
+          images={currentProduct.images.map((img) => ({ id: img.id, url: img.url }))}
+          onClose={() => setLightboxOpen(false)}
         />
       )}
 

@@ -4,11 +4,19 @@ import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import EditProductModal from '@/components/EditProductModal'
 
+interface ProductImage {
+  id: string
+  url: string
+  isPrimary: boolean
+  sortOrder: number
+}
+
 interface ProductStat {
   id: string
   name: string
   description: string | null
   imageUrl: string
+  images: ProductImage[]
   size: string | null
   requestedPrice: number | null
   createdAt: string
@@ -32,7 +40,7 @@ export default function AdminPage() {
   const [uploadDesc, setUploadDesc] = useState('')
   const [uploadSize, setUploadSize] = useState('')
   const [uploadPrice, setUploadPrice] = useState('')
-  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploadFiles, setUploadFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [uploadSuccess, setUploadSuccess] = useState('')
@@ -104,8 +112,8 @@ export default function AdminPage() {
       setUploadError('Product name is required.')
       return
     }
-    if (!uploadFile) {
-      setUploadError('Please select an image.')
+    if (uploadFiles.length === 0) {
+      setUploadError('Please select at least one image.')
       return
     }
 
@@ -116,7 +124,9 @@ export default function AdminPage() {
       if (uploadDesc.trim()) formData.append('description', uploadDesc.trim())
       if (uploadSize.trim()) formData.append('size', uploadSize.trim())
       if (uploadPrice.trim()) formData.append('requestedPrice', uploadPrice.trim())
-      formData.append('image', uploadFile)
+      for (const file of uploadFiles) {
+        formData.append('images', file)
+      }
 
       const res = await fetch('/api/products', {
         method: 'POST',
@@ -129,12 +139,16 @@ export default function AdminPage() {
         return
       }
 
-      setUploadSuccess('Product uploaded successfully!')
+      setUploadSuccess(
+        uploadFiles.length === 1
+          ? 'Product uploaded successfully!'
+          : `Product uploaded with ${uploadFiles.length} images!`
+      )
       setUploadName('')
       setUploadDesc('')
       setUploadSize('')
       setUploadPrice('')
-      setUploadFile(null)
+      setUploadFiles([])
       if (fileInputRef.current) fileInputRef.current.value = ''
       await fetchProducts()
     } catch {
@@ -277,17 +291,26 @@ export default function AdminPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Product Image <span className="text-red-400">*</span>
+                Product Images <span className="text-red-400">*</span>
               </label>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                multiple
+                onChange={(e) =>
+                  setUploadFiles(e.target.files ? Array.from(e.target.files) : [])
+                }
                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
               />
-              {uploadFile && (
-                <p className="mt-1 text-xs text-gray-400">Selected: {uploadFile.name}</p>
+              <p className="mt-1 text-xs text-gray-400">
+                The first image will be set as the primary (shown on the swipe card).
+                Hold Cmd/Ctrl to select multiple files.
+              </p>
+              {uploadFiles.length > 0 && (
+                <p className="mt-1 text-xs text-gray-500">
+                  {uploadFiles.length} file{uploadFiles.length !== 1 ? 's' : ''} selected
+                </p>
               )}
             </div>
             {uploadError && (
@@ -457,22 +480,22 @@ export default function AdminPage() {
         <EditProductModal
           product={editingProduct}
           onClose={() => setEditingProduct(null)}
-          onSaved={(updated) => {
-            setProducts((prev) =>
-              prev.map((p) =>
-                p.id === updated.id
-                  ? {
-                      ...p,
-                      name: updated.name,
-                      description: updated.description,
-                      size: updated.size,
-                      requestedPrice: updated.requestedPrice,
-                      imageUrl: updated.imageUrl,
-                    }
-                  : p
-              )
-            )
-            setEditingProduct(null)
+          onSaved={async () => {
+            // Refresh from the server so the modal and list stay in sync
+            // after image add / delete / set-primary or any text edit.
+            try {
+              const res = await fetch('/api/products')
+              const data = await res.json()
+              if (data.products) {
+                setProducts(data.products)
+                const refreshed = data.products.find(
+                  (p: ProductStat) => p.id === editingProduct.id
+                )
+                if (refreshed) setEditingProduct(refreshed)
+              }
+            } catch {
+              // ignore
+            }
           }}
         />
       )}
