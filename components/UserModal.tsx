@@ -33,9 +33,9 @@ export default function UserModal({ onSubmit }: UserModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Welcome!</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Welcome to Stooply!</h1>
           <p className="mt-2 text-gray-500 text-sm">
-            Enter your details to start discovering products.
+            Enter your details to start seeing our stuff
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
