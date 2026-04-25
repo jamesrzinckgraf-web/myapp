@@ -40,6 +40,7 @@ export async function GET() {
         createdAt: product.createdAt,
         swiped: !!userSwipe,
         swipeDirection: userSwipe?.direction || null,
+        bidPrice: userSwipe?.bidPrice ?? null,
         stats: {
           right: product.swipes.filter((s) => s.direction === 'right').length,
           left: product.swipes.filter((s) => s.direction === 'left').length,

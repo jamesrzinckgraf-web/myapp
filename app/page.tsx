@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import SwipeCard from '@/components/SwipeCard'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import UserModal from '@/components/UserModal'
-import BidModal from '@/components/BidModal'
 
 interface Product {
   id: string
@@ -14,25 +14,21 @@ interface Product {
   requestedPrice: number | null
   swiped: boolean
   swipeDirection: string | null
+  bidPrice: number | null
 }
 
 export default function HomePage() {
+  const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string | null>(null)
   const [products, setProducts] = useState<Product[]>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [swipeLoading, setSwipeLoading] = useState(false)
-  const [pendingBid, setPendingBid] = useState<Product | null>(null)
 
   const fetchProducts = useCallback(async () => {
     try {
       const res = await fetch('/api/products')
       const data = await res.json()
-      if (data.products) {
-        const unswiped = data.products.filter((p: Product) => !p.swiped)
-        setProducts(unswiped)
-        setCurrentIndex(0)
-      }
+      if (data.products) setProducts(data.products)
     } catch (error) {
       console.error('Failed to fetch products:', error)
     }
@@ -40,8 +36,10 @@ export default function HomePage() {
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId')
+    const storedName = localStorage.getItem('userName')
     if (storedUserId) {
       setUserId(storedUserId)
+      setUserName(storedName)
       fetchProducts().then(() => setLoading(false))
     } else {
       setLoading(false)
@@ -61,49 +59,25 @@ export default function HomePage() {
 
     const data = await res.json()
     localStorage.setItem('userId', data.user.id)
+    localStorage.setItem('userName', data.user.name)
     setUserId(data.user.id)
+    setUserName(data.user.name)
     setLoading(true)
     await fetchProducts()
     setLoading(false)
   }
 
-  const recordSwipe = async (
-    productId: string,
-    direction: 'left' | 'right',
-    bidPrice: number | null
-  ) => {
-    setSwipeLoading(true)
+  const handleLogout = async () => {
     try {
-      await fetch('/api/swipe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, direction, bidPrice }),
-      })
-    } catch (error) {
-      console.error('Failed to record swipe:', error)
-    } finally {
-      setSwipeLoading(false)
-      setCurrentIndex((prev) => prev + 1)
+      await fetch('/api/auth/user', { method: 'DELETE' })
+    } catch {
+      // ignore — clearing local state is the important part
     }
-  }
-
-  const handleSwipe = async (direction: 'left' | 'right') => {
-    const product = products[currentIndex]
-    if (!product || swipeLoading) return
-
-    if (direction === 'right') {
-      // Hold off committing the swipe — ask for a bid first.
-      setPendingBid(product)
-      return
-    }
-
-    await recordSwipe(product.id, 'left', null)
-  }
-
-  const handleBidSubmit = async (bidPrice: number | null) => {
-    if (!pendingBid) return
-    await recordSwipe(pendingBid.id, 'right', bidPrice)
-    setPendingBid(null)
+    localStorage.removeItem('userId')
+    localStorage.removeItem('userName')
+    setUserId(null)
+    setUserName(null)
+    setProducts([])
   }
 
   if (loading) {
@@ -114,116 +88,127 @@ export default function HomePage() {
     )
   }
 
-  const currentProduct = products[currentIndex]
-  const remaining = products.length - currentIndex
+  if (!userId) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4">
+        <UserModal onSubmit={handleUserSubmit} />
+        <a
+          href="/admin"
+          className="fixed bottom-4 right-4 text-white/20 hover:text-white/50 text-xs transition-colors"
+        >
+          Admin
+        </a>
+      </div>
+    )
+  }
+
+  const liked = products.filter((p) => p.swipeDirection === 'right')
+  const unswipedCount = products.filter((p) => !p.swiped).length
+  const hasMoreToSwipe = unswipedCount > 0
 
   return (
-    <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-4">
-      {!userId && (
-        <UserModal onSubmit={handleUserSubmit} />
-      )}
+    <div className="min-h-screen bg-[#0f172a]">
+      {/* Header */}
+      <header className="px-4 sm:px-6 py-4 flex items-center justify-between border-b border-white/10">
+        <div>
+          <h1 className="text-xl font-bold text-white tracking-tight">Stooply</h1>
+          {userName && (
+            <p className="text-xs text-white/50 mt-0.5">Hi, {userName}</p>
+          )}
+        </div>
+        <button
+          onClick={handleLogout}
+          className="text-sm text-white/50 hover:text-red-400 font-medium transition-colors"
+        >
+          Log Out
+        </button>
+      </header>
 
-      {userId && (
-        <>
-          {/* Header */}
-          <div className="w-full max-w-md mb-4 text-center">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Product Discovery</h1>
-            {remaining > 0 && (
-              <p className="text-indigo-300 text-sm mt-1">
-                {remaining} product{remaining !== 1 ? 's' : ''} left
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6">
+        {/* CTA card */}
+        <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
+          <h2 className="text-lg font-semibold">
+            {hasMoreToSwipe ? 'Keep discovering' : 'All caught up!'}
+          </h2>
+          <p className="text-indigo-100 text-sm mt-1">
+            {hasMoreToSwipe
+              ? `${unswipedCount} new item${unswipedCount !== 1 ? 's' : ''} waiting for you.`
+              : "You've swiped on everything we have right now."}
+          </p>
+          <button
+            onClick={() => router.push('/swipe')}
+            className="mt-4 px-5 py-2.5 bg-white text-indigo-700 font-semibold rounded-xl hover:bg-indigo-50 transition-colors"
+          >
+            {hasMoreToSwipe
+              ? liked.length > 0
+                ? 'Continue Swiping'
+                : 'Start Swiping'
+              : 'View All Again'}
+          </button>
+        </div>
+
+        {/* Liked list */}
+        <section className="mt-8">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">
+              Your Likes{' '}
+              <span className="text-white/40 font-normal text-base">
+                ({liked.length})
+              </span>
+            </h2>
+          </div>
+
+          {liked.length === 0 ? (
+            <div className="text-center py-12 px-6 bg-white/5 rounded-2xl border border-white/10">
+              <div className="text-5xl mb-3">💝</div>
+              <p className="text-white font-medium">Nothing here yet</p>
+              <p className="text-white/50 text-sm mt-1">
+                Start swiping to find products you love.
               </p>
-            )}
-          </div>
-
-          {/* Card area */}
-          <div className="w-full max-w-md flex flex-col items-center">
-            {currentProduct ? (
-              <>
-                {/* Background card for stack effect */}
-                {products[currentIndex + 1] && (
-                  <div
-                    className="absolute w-80 sm:w-96 bg-white rounded-3xl shadow-xl"
-                    style={{
-                      height: '480px',
-                      transform: 'scale(0.95) translateY(10px)',
-                      zIndex: 0,
-                    }}
-                  />
-                )}
-                <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
-                  <SwipeCard
-                    key={currentProduct.id}
-                    product={currentProduct}
-                    onSwipe={handleSwipe}
-                  />
-                </div>
-
-                {/* Button controls */}
-                <div className="flex gap-8 mt-6">
-                  <button
-                    onClick={() => handleSwipe('left')}
-                    disabled={swipeLoading}
-                    className="w-16 h-16 bg-white/10 hover:bg-red-500/80 disabled:opacity-50 border-2 border-red-400 text-red-400 hover:text-white rounded-full flex items-center justify-center text-2xl font-bold transition-all hover:scale-110"
-                    title="Not Interested"
-                  >
-                    ✕
-                  </button>
-                  <button
-                    onClick={() => handleSwipe('right')}
-                    disabled={swipeLoading}
-                    className="w-16 h-16 bg-white/10 hover:bg-green-500/80 disabled:opacity-50 border-2 border-green-400 text-green-400 hover:text-white rounded-full flex items-center justify-center text-2xl font-bold transition-all hover:scale-110"
-                    title="Interested"
-                  >
-                    ♥
-                  </button>
-                </div>
-
-                <p className="mt-4 text-white/40 text-xs">
-                  Drag card or use buttons · ✕ not interested · ♥ interested
-                </p>
-              </>
-            ) : (
-              <div className="text-center py-16 px-6">
-                <div className="text-6xl mb-4">🎉</div>
-                <h2 className="text-2xl font-bold text-white mb-2">
-                  You&apos;ve seen all products!
-                </h2>
-                <p className="text-indigo-300">
-                  Check back later for new discoveries.
-                </p>
-                <button
-                  onClick={async () => {
-                    try {
-                      const res = await fetch('/api/products')
-                      const data = await res.json()
-                      if (data.products) {
-                        setProducts(data.products)
-                        setCurrentIndex(0)
-                      }
-                    } catch (error) {
-                      console.error('Failed to restart:', error)
-                    }
-                  }}
-                  className="mt-8 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors"
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {liked.map((product) => (
+                <li
+                  key={product.id}
+                  className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors"
                 >
-                  Start Over
-                </button>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+                  <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-white/10">
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-white truncate">{product.name}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-white/60">
+                      {product.requestedPrice != null && (
+                        <span>Asking ${product.requestedPrice.toFixed(2)}</span>
+                      )}
+                      {product.size && <span>📏 {product.size}</span>}
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    {product.bidPrice != null ? (
+                      <>
+                        <p className="text-xs text-white/40">Your bid</p>
+                        <p className="text-base font-semibold text-green-400">
+                          ${product.bidPrice.toFixed(2)}
+                        </p>
+                      </>
+                    ) : (
+                      <span className="text-xs text-white/40 italic">No bid</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </main>
 
-      {/* Bid modal — shown after a right-swipe */}
-      {pendingBid && (
-        <BidModal
-          productName={pendingBid.name}
-          requestedPrice={pendingBid.requestedPrice}
-          onSubmit={handleBidSubmit}
-        />
-      )}
-
-      {/* Admin link */}
       <a
         href="/admin"
         className="fixed bottom-4 right-4 text-white/20 hover:text-white/50 text-xs transition-colors"
