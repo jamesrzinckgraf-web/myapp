@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 
 interface EditProductModalProps {
   product: {
@@ -9,6 +10,7 @@ interface EditProductModalProps {
     description: string | null
     size: string | null
     requestedPrice: number | null
+    imageUrl: string
   }
   onClose: () => void
   onSaved: (updated: {
@@ -17,6 +19,7 @@ interface EditProductModalProps {
     description: string | null
     size: string | null
     requestedPrice: number | null
+    imageUrl: string
   }) => void
 }
 
@@ -31,8 +34,27 @@ export default function EditProductModal({
   const [price, setPrice] = useState(
     product.requestedPrice != null ? String(product.requestedPrice) : ''
   )
+  const [newImage, setNewImage] = useState<File | null>(null)
+  const [newImagePreview, setNewImagePreview] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Generate / clean up an object URL for the file preview
+  useEffect(() => {
+    if (!newImage) {
+      setNewImagePreview(null)
+      return
+    }
+    const url = URL.createObjectURL(newImage)
+    setNewImagePreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [newImage])
+
+  const clearNewImage = () => {
+    setNewImage(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,15 +77,18 @@ export default function EditProductModal({
 
     setSaving(true)
     try {
+      const formData = new FormData()
+      formData.append('name', name.trim())
+      formData.append('description', description.trim())
+      formData.append('size', size.trim())
+      formData.append('requestedPrice', parsedPrice != null ? String(parsedPrice) : '')
+      if (newImage) {
+        formData.append('image', newImage)
+      }
+
       const res = await fetch(`/api/products/${product.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim() || null,
-          size: size.trim() || null,
-          requestedPrice: parsedPrice,
-        }),
+        body: formData,
       })
 
       if (!res.ok) {
@@ -82,6 +107,7 @@ export default function EditProductModal({
           data.product.requestedPrice != null
             ? Number(data.product.requestedPrice)
             : null,
+        imageUrl: data.product.imageUrl,
       })
     } catch {
       setError('Failed to save changes. Please try again.')
@@ -90,10 +116,12 @@ export default function EditProductModal({
     }
   }
 
+  const displayedImage = newImagePreview || product.imageUrl
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white">
           <h2 className="text-lg font-semibold text-gray-900">Edit Product</h2>
           <button
             type="button"
@@ -118,6 +146,50 @@ export default function EditProductModal({
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Image preview + replace */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Image
+            </label>
+            <div className="flex items-start gap-4">
+              <div className="relative w-32 h-32 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-200">
+                <Image
+                  src={displayedImage}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  unoptimized={!!newImagePreview}
+                />
+                {newImage && (
+                  <span className="absolute top-1 left-1 bg-indigo-600 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                    NEW
+                  </span>
+                )}
+              </div>
+              <div className="flex-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setNewImage(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                />
+                <p className="mt-1.5 text-xs text-gray-400">
+                  Leave blank to keep the current image.
+                </p>
+                {newImage && (
+                  <button
+                    type="button"
+                    onClick={clearNewImage}
+                    className="mt-2 text-xs text-gray-500 hover:text-red-500 transition-colors"
+                  >
+                    Cancel replacement
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Product Name <span className="text-red-400">*</span>
@@ -127,7 +199,6 @@ export default function EditProductModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              autoFocus
             />
           </div>
 

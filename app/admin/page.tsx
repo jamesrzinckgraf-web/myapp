@@ -467,6 +467,7 @@ export default function AdminPage() {
                       description: updated.description,
                       size: updated.size,
                       requestedPrice: updated.requestedPrice,
+                      imageUrl: updated.imageUrl,
                     }
                   : p
               )
