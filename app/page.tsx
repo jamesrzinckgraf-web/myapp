@@ -136,7 +136,9 @@ export default function HomePage() {
               : "You've swiped on everything we have right now."}
           </p>
           <button
-            onClick={() => router.push('/swipe')}
+            onClick={() =>
+              router.push(hasMoreToSwipe ? '/swipe' : '/swipe?all=1')
+            }
             className="mt-4 px-5 py-2.5 bg-white text-indigo-700 font-semibold rounded-xl hover:bg-indigo-50 transition-colors"
           >
             {hasMoreToSwipe

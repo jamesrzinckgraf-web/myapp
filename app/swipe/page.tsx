@@ -49,7 +49,14 @@ export default function SwipePage() {
       return
     }
     setUserId(storedUserId)
-    fetchProducts().then(() => setLoading(false))
+
+    // Honor ?all=1 on initial load — show every product, not just unswiped.
+    // This is what "View All Again" / "Start Over" use to restart the deck.
+    const showAll =
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('all') === '1'
+
+    fetchProducts(showAll).then(() => setLoading(false))
   }, [fetchProducts, router])
 
   const recordSwipe = async (
