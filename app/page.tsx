@@ -111,9 +111,11 @@ export default function HomePage() {
       {/* Header */}
       <header className="px-4 sm:px-6 py-4 flex items-center justify-between border-b border-white/10">
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Stooply</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(168,85,247,0.25)]">
+            Stooply
+          </h1>
           {userName && (
-            <p className="text-xs text-white/50 mt-0.5">Hi, {userName}</p>
+            <p className="text-xs text-white/60 mt-1">Hi, {userName}</p>
           )}
         </div>
         <button
@@ -125,6 +127,13 @@ export default function HomePage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6">
+        {/* Welcome blurb */}
+        <p className="text-white/80 text-base sm:text-lg leading-relaxed mb-6">
+          Start swiping to see what we&apos;ve got! Everyone here gets the
+          friends and family rate. Feel free to propose any price you would be
+          comfortable with (or $0 if you&apos;re just plain interested).
+        </p>
+
         {/* CTA card */}
         <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
           <h2 className="text-lg font-semibold">
