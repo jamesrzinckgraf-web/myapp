@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import SwipeCard from '@/components/SwipeCard'
 import BidModal from '@/components/BidModal'
 import ImageLightbox from '@/components/ImageLightbox'
+import ProductDetailModal from '@/components/ProductDetailModal'
 
 interface ProductImage {
   id: string
@@ -34,6 +35,7 @@ export default function SwipePage() {
   const [swipeLoading, setSwipeLoading] = useState(false)
   const [pendingBid, setPendingBid] = useState<Product | null>(null)
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
 
   const fetchProducts = useCallback(async (includeAll = false) => {
     try {
@@ -171,6 +173,7 @@ export default function SwipePage() {
                   product={currentProduct}
                   onSwipe={handleSwipe}
                   onImageClick={() => setLightboxOpen(true)}
+                  onMoreInfo={() => setDetailOpen(true)}
                 />
               </div>
 
@@ -237,6 +240,13 @@ export default function SwipePage() {
         <ImageLightbox
           images={currentProduct.images.map((img) => ({ id: img.id, url: img.url }))}
           onClose={() => setLightboxOpen(false)}
+        />
+      )}
+
+      {detailOpen && currentProduct && (
+        <ProductDetailModal
+          product={currentProduct}
+          onClose={() => setDetailOpen(false)}
         />
       )}
 

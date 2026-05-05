@@ -22,13 +22,19 @@ interface SwipeCardProps {
   product: Product
   onSwipe: (direction: 'left' | 'right') => void
   onImageClick?: () => void
+  onMoreInfo?: () => void
 }
 
 const SWIPE_THRESHOLD = 100
 // Movement under this many pixels is considered a tap, not a drag.
 const TAP_MAX_MOVEMENT = 6
 
-export default function SwipeCard({ product, onSwipe, onImageClick }: SwipeCardProps) {
+export default function SwipeCard({
+  product,
+  onSwipe,
+  onImageClick,
+  onMoreInfo,
+}: SwipeCardProps) {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [isAnimatingOut, setIsAnimatingOut] = useState<'left' | 'right' | null>(null)
@@ -196,11 +202,27 @@ export default function SwipeCard({ product, onSwipe, onImageClick }: SwipeCardP
               </span>
             )}
           </div>
-          {product.description && (
-            <p className="mt-1 text-sm text-gray-500 line-clamp-2">{product.description}</p>
-          )}
           {product.size && (
-            <p className="mt-1 text-xs text-gray-400">Size: {product.size}</p>
+            <p className="mt-0.5 text-xs text-gray-400">Size: {product.size}</p>
+          )}
+          {product.description && (
+            <p className="mt-1 text-sm text-gray-500 line-clamp-1">{product.description}</p>
+          )}
+          {onMoreInfo && (
+            <button
+              type="button"
+              // Stop the parent's mousedown/touchstart from initiating a drag
+              // (and from being treated as a "tap" that opens the lightbox).
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                onMoreInfo()
+              }}
+              className="mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+            >
+              View more info →
+            </button>
           )}
         </div>
       </div>
