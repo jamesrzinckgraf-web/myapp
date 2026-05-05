@@ -202,12 +202,6 @@ export default function SwipeCard({
               </span>
             )}
           </div>
-          {product.size && (
-            <p className="mt-0.5 text-xs text-gray-400">Size: {product.size}</p>
-          )}
-          {product.description && (
-            <p className="mt-1 text-sm text-gray-500 line-clamp-1">{product.description}</p>
-          )}
           {onMoreInfo && (
             <button
               type="button"
