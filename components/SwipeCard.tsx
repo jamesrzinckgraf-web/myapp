@@ -215,7 +215,7 @@ export default function SwipeCard({
               }}
               className="mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
             >
-              View more info →
+              Click for more info →
             </button>
           )}
         </div>
