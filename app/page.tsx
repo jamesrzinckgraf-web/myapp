@@ -113,8 +113,8 @@ export default function HomePage() {
       {/* Header */}
       <header className="px-4 sm:px-6 py-4 flex items-center justify-between border-b border-white/10">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(168,85,247,0.25)]">
-            Stooply
+          <h1 className="stooply-logo text-4xl sm:text-5xl font-black italic tracking-tight bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-amber-300 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(217,70,239,0.35)] select-none">
+            Stooply<span className="text-fuchsia-400 not-italic">.</span>
           </h1>
           {userName && (
             <p className="text-xs text-white/60 mt-1">Hi, {userName}</p>
@@ -131,9 +131,11 @@ export default function HomePage() {
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6">
         {/* Welcome blurb */}
         <p className="text-white/80 text-base sm:text-lg leading-relaxed mb-6">
-          Start swiping to see what we&apos;ve got! Everyone here gets the
-          friends and family rate. Feel free to propose any price you would be
-          comfortable with (or $0 if you&apos;re just plain interested).
+          Many Boston apartments… lots of stuff. Start swiping to see what
+          we&apos;ve got! Everyone here gets the friends and family rate. Feel
+          free to propose any price you would be comfortable with or click{' '}
+          <span className="font-semibold text-white">Just Interested</span>.
+          Reach out to us directly for more information.
         </p>
 
         {/* CTA card */}

@@ -24,3 +24,14 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Stooply wordmark — animated shimmer gradient */
+@keyframes stooply-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+.stooply-logo {
+  background-size: 200% 200%;
+  animation: stooply-shimmer 6s ease-in-out infinite;
+}
