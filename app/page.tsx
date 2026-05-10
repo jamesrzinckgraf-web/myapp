@@ -135,7 +135,8 @@ export default function HomePage() {
           friends and family rate. Feel free to propose any price you want or
           simply click{' '}
           <span className="font-semibold text-white">Just Interested</span>.
-          Reach out to us directly for more information.
+          Sale goes to the highest bidder. Reach out to us directly for more
+          information.
         </p>
 
         {/* CTA card */}
