@@ -263,6 +263,31 @@ export default function HomePage() {
             </ul>
           )}
         </section>
+
+        {/* Browse-all CTA */}
+        <div className="mt-10 mb-2 text-center">
+          <button
+            onClick={() => router.push('/browse')}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white/10 hover:bg-white/15 text-white font-medium rounded-xl border border-white/15 transition-colors"
+          >
+            View All Items
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-4 h-4"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+          <p className="mt-2 text-xs text-white/40">
+            Browse everything without swiping.
+          </p>
+        </div>
       </main>
 
       <a
