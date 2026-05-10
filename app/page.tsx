@@ -102,7 +102,9 @@ export default function HomePage() {
     )
   }
 
-  const liked = products.filter((p) => p.swipeDirection === 'right')
+  const rightSwipes = products.filter((p) => p.swipeDirection === 'right')
+  const bids = rightSwipes.filter((p) => p.bidPrice != null)
+  const likes = rightSwipes.filter((p) => p.bidPrice == null)
   const unswipedCount = products.filter((p) => !p.swiped).length
   const hasMoreToSwipe = unswipedCount > 0
 
@@ -151,35 +153,34 @@ export default function HomePage() {
             className="mt-4 px-5 py-2.5 bg-white text-indigo-700 font-semibold rounded-xl hover:bg-indigo-50 transition-colors"
           >
             {hasMoreToSwipe
-              ? liked.length > 0
+              ? rightSwipes.length > 0
                 ? 'Continue Swiping'
                 : 'Start Swiping'
               : 'View All Again'}
           </button>
         </div>
 
-        {/* Liked list */}
+        {/* Your Bids */}
         <section className="mt-8">
           <div className="flex items-baseline justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">
-              Your Likes{' '}
+              Your Bids{' '}
               <span className="text-white/40 font-normal text-base">
-                ({liked.length})
+                ({bids.length})
               </span>
             </h2>
           </div>
 
-          {liked.length === 0 ? (
-            <div className="text-center py-12 px-6 bg-white/5 rounded-2xl border border-white/10">
-              <div className="text-5xl mb-3">💝</div>
-              <p className="text-white font-medium">Nothing here yet</p>
-              <p className="text-white/50 text-sm mt-1">
-                Start swiping to find products you love.
+          {bids.length === 0 ? (
+            <div className="text-center py-10 px-6 bg-white/5 rounded-2xl border border-white/10">
+              <div className="text-4xl mb-2">💸</div>
+              <p className="text-white/80 text-sm">
+                You haven&apos;t placed any bids yet.
               </p>
             </div>
           ) : (
             <ul className="space-y-3">
-              {liked.map((product) => (
+              {bids.map((product) => (
                 <li
                   key={product.id}
                   className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors"
@@ -202,16 +203,58 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    {product.bidPrice != null ? (
-                      <>
-                        <p className="text-xs text-white/40">Your bid</p>
-                        <p className="text-base font-semibold text-green-400">
-                          ${product.bidPrice.toFixed(2)}
-                        </p>
-                      </>
-                    ) : (
-                      <span className="text-xs text-white/40 italic">No bid</span>
-                    )}
+                    <p className="text-xs text-white/40">Your bid</p>
+                    <p className="text-base font-semibold text-green-400">
+                      ${product.bidPrice!.toFixed(2)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Your Likes */}
+        <section className="mt-8">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">
+              Your Likes{' '}
+              <span className="text-white/40 font-normal text-base">
+                ({likes.length})
+              </span>
+            </h2>
+          </div>
+
+          {likes.length === 0 ? (
+            <div className="text-center py-10 px-6 bg-white/5 rounded-2xl border border-white/10">
+              <div className="text-4xl mb-2">💝</div>
+              <p className="text-white/80 text-sm">
+                Items you&apos;re just interested in will show up here.
+              </p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {likes.map((product) => (
+                <li
+                  key={product.id}
+                  className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors"
+                >
+                  <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-white/10">
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-white truncate">{product.name}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-white/60">
+                      {product.requestedPrice != null && (
+                        <span>Asking ${product.requestedPrice.toFixed(2)}</span>
+                      )}
+                      {product.size && <span>📏 {product.size}</span>}
+                    </div>
                   </div>
                 </li>
               ))}

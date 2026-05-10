@@ -75,7 +75,7 @@ export default function BidModal({ productName, requestedPrice, onSubmit }: BidM
               disabled={submitting}
               className="flex-1 py-3 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
-              Skip
+              Just Interested
             </button>
             <button
               type="submit"
