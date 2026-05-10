@@ -131,9 +131,9 @@ export default function HomePage() {
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6">
         {/* Welcome blurb */}
         <p className="text-white/80 text-base sm:text-lg leading-relaxed mb-6">
-          Many Boston apartments… lots of stuff. Start swiping to see what
-          we&apos;ve got! Everyone here gets the friends and family rate. Feel
-          free to propose any price you would be comfortable with or click{' '}
+          Start swiping to see what we&apos;ve got! Everyone here gets the
+          friends and family rate. Feel free to propose any price you want or
+          simply click{' '}
           <span className="font-semibold text-white">Just Interested</span>.
           Reach out to us directly for more information.
         </p>
